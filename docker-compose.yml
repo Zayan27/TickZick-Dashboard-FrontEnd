@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  react:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "8002:3000"
+
+networks:
+  tickzick-dashboard:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.24.24.3/24
