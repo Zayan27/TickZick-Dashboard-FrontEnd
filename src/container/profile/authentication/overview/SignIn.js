@@ -5,6 +5,7 @@ import { Form, Input, Button, Row, Col } from 'antd';
 import { Checkbox } from '../../../../components/checkbox/checkbox';
 import { DataService } from '../../../../config/dataService/dataService';
 import { setItem, getItem } from '../../../../utility/localStorageControl';
+import Cookies from "js-cookie";
 import { ReactSVG } from 'react-svg';
 
 function SignIn({ role }) {
@@ -12,22 +13,45 @@ function SignIn({ role }) {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [state, setState] = useState({ checked: null });
+  const getAuthToken = () => {
+    let token = null;
+  
+    if (Cookies.get("admin_token")) {
+      token = Cookies.get("admin_token");
+    } else if (Cookies.get("organizer_token")) {
+      token = Cookies.get("organizer_token");
+    } else if (Cookies.get("customer_token")) {
+      token = Cookies.get("customer_token");
+    }
+  
+    return token;
+  };
+  
+  const getRoleFromCookies = () => {
+    if (Cookies.get("admin_token")) return "admin";
+    if (Cookies.get("organizer_token")) return "organizer";
+    if (Cookies.get("customer_token")) return "customer";
+    return null;
+  };
 
   useEffect(() => {
-    const savedRole = getItem("auth_role");
+    const role = getRoleFromCookies();
+    const token = getAuthToken();
 
-    // Check token by role
-    const adminToken = getItem("admin_token");
-    const organizerToken = getItem("organizer_token");
+    if (role && token) {
+      // Save first
+      setItem("auth_role", role);
+      setItem(`${role}_token`, token);
 
-    if (savedRole === "admin" && adminToken) {
-      history("/admin", { replace: true });
+      const redirectTo =
+        role === "admin"
+          ? "/admin"
+          : role === "organizer"
+          ? "/organizer"
+          : "/";
+
+      history(redirectTo, { replace: true });
     }
-
-    else if (savedRole === "organizer" && organizerToken) {
-      history("/organizer", { replace: true });
-    }
-
   }, []);
 
   const handleGoogleLogin = () => {
@@ -165,7 +189,7 @@ function SignIn({ role }) {
                 </Button>
               </Form.Item>
 
-              {role !== 'admin' && (
+              {/* {role !== 'admin' && (
                 <>
                   <p className="relative text-body dark:text-white60 -mt-2.5 mb-6 text-center text-13 font-medium before:absolute before:w-full before:h-px ltr:before:left-0 rtl:before:right-0 before:top-1/2 before:-translate-y-1/2 before:z-10 before:bg-gray-200 dark:before:bg-white10">
                     <span className="relative z-20 px-4 bg-white dark:bg-[#1b1d2a]">Or</span>
@@ -185,7 +209,7 @@ function SignIn({ role }) {
                     </li>
                   </ul>
                 </>
-              )}
+              )} */}
             </Form>
           </div>
           {role === "organizer" && (
