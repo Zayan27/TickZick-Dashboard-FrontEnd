@@ -16,6 +16,8 @@ import TopMenu from './TopMenu';
 import Search from '../components/utilities/auth-info/Search';
 import AuthInfo from '../components/utilities/auth-info/info';
 import { ReactComponent as MySVG } from '../static/img/icon/left-bar.svg';
+import logo from '../static/img/tickzick.png'
+import logoDark from '../static/img/tickzickdark.png'
 
 const { theme } = require('../config/theme/themeVariables');
 
@@ -134,11 +136,7 @@ const ThemeLayout = (WrappedComponent) => {
                     <Link to="/admin">
                       <img
                         className="w-full max-w-[120px] xs:max-w-[100px]"
-                        src={
-                          layoutMode === 'lightMode'
-                            ? require(`../static/img/logo_dark.svg`).default
-                            : require(`../static/img/logo_white.svg`).default
-                        }
+                        src={layoutMode === 'lightMode' ? logoDark : logo}
                         alt=""
                       />
                     </Link>

@@ -1,5 +1,7 @@
 import { Spin } from 'antd';
 import React, { Suspense } from 'react';
+import logoDark from '../../../static/img/tickzickdark.png'
+import logo from '../../../static/img/tickzick.png'
 
 const AuthLayout = (WraperContent) => {
   return function () {
@@ -17,8 +19,8 @@ const AuthLayout = (WraperContent) => {
         >
           <div className="py-[120px] 2xl:py-[80px] px-[15px]">
             <div className="flex justify-center">
-              <img className="dark:hidden" src={require(`../../../static/img/logo_dark.svg`).default} alt="" />
-              <img className="hidden dark:block" src={require(`../../../static/img/logo_white.svg`).default} alt="" />
+              <img className="dark:hidden w-[200px]" src={logoDark} alt="" />
+              <img className="hidden dark:block w-[200px]" src={logo} alt="" />
             </div>
             <WraperContent />
           </div>
