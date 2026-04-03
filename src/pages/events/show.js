@@ -411,7 +411,9 @@ function EventDetailsPage() {
         title={
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-[22px] font-semibold text-dark dark:text-white87 mb-1">
+              <h1 className="text-[22px] font-semibold text-dark dark:text-white87 mb-1 text-wrap"
+              style={{textWrap:'pretty'}}
+              >
                 {event.title || `Event #${event.id}`}
               </h1>
               <p className="text-gray-500 dark:text-white60 text-sm">
