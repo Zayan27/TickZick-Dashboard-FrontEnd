@@ -12,6 +12,7 @@ import Heading from '../../heading/heading';
 import { Dropdown } from '../../dropdown/dropdown';
 import { getItem, removeItem } from '../../../utility/localStorageControl';
 import { DataService } from "../../../config/dataService/dataService";
+import Cookies from "js-cookie";
 
 const AuthInfo = React.memo(() => {
   const [state, setState] = useState({
@@ -38,22 +39,46 @@ const AuthInfo = React.memo(() => {
   }, []);
 
   const SignOut = async () => {
-
     setState(prev => ({ ...prev, loading: true }));
 
     try {
       await DataService.post(`${role}/logout`, {});
-
     } catch (error) {
       console.log("Logout API error ignored:", error);
     }
 
-    // Always clear session even if API fails
+    // Remove localStorage items
     removeItem('auth_user');
     removeItem('auth_role');
     removeItem('admin_token');
     removeItem('organizer_token');
     removeItem('auth_success');
+
+    // Cookie options (IMPORTANT if you used domain while setting cookies)
+    const cookieOptions = {
+      domain: ".tickzick.com",
+      path: "/",
+    };
+
+    // Remove cookies (domain-level)
+    [
+      "admin_token",
+      "admin_data",
+      "organizer_token",
+      "organizer_data",
+      "customer_token",
+      "customer_data",
+    ].forEach((key) => Cookies.remove(key, cookieOptions));
+
+    // Remove cookies (fallback for local/non-domain)
+    [
+      "admin_token",
+      "admin_data",
+      "organizer_token",
+      "organizer_data",
+      "customer_token",
+      "customer_data",
+    ].forEach((key) => Cookies.remove(key));
 
     navigate("/", { replace: true });
 
