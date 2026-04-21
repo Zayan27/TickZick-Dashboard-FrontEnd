@@ -644,9 +644,8 @@ const PaginationStyle = Styled.div`
         }
         &.ant-pagination-item-active {
           background: ${({ theme }) => theme[theme.mainContent].primary};
-          a {
-            color: ${({ theme }) => theme[theme.mainContent]['white-text']};
-          }
+          
+          color: ${({ theme }) => theme[theme.mainContent]['white-text']};
         }
         &.ant-pagination-options{
           display: inline-flex;

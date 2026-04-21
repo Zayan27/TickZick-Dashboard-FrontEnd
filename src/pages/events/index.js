@@ -218,7 +218,7 @@ function EventPage() {
                                                     itemRender: (page, type, element) => {
                                                         if (type === "page") {
                                                             return (
-                                                                <button className="ant-pagination-item-link text-white">
+                                                                <button className="ant-pagination-item-link ">
                                                                     {page}
                                                                 </button>
                                                             );

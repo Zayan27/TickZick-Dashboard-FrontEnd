@@ -636,9 +636,9 @@ function EventDetailsPage() {
                     <Statistic
                       title="Revenue"
                       value={stats.totalRevenue}
-                      prefix={<UilDollarSign className="w-4 h-4 mr-1" />}
+                      
                       valueStyle={{ fontSize: '24px', fontWeight: 'bold' }}
-                      suffix="USD"
+                      
                     />
                   </div>
                 </Col>
