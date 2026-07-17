@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Table, Spin } from 'antd';
-import { Link } from 'react-router-dom';
+import { Link, NavLink, useNavigate} from 'react-router-dom';
 import { UilPlus, UilSearch, UilEdit, UilTrash, UilEye } from '@iconscout/react-unicons';
 import { GlobalUtilityStyle, PaginationStyle } from '../../container/styled';
 import { PageHeader } from '../../components/page-headers/page-headers';
 import { DataService } from "../../config/dataService/dataService";
 import { getItem } from "../../utility/localStorageControl";
 
+
 function EventPage() {
     const [events, setEvents] = useState([]);
     const [filtered, setFiltered] = useState([]);
-
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const user = getItem("auth_user");
     const authRole = getItem("auth_role");
+    
 
     const loadData = async () => {
         setLoading(true);
@@ -55,6 +57,10 @@ function EventPage() {
         );
 
         setFiltered(result);
+    };
+    const handleEventCreate = () => {
+        const frontUrl = process.env.REACT_APP_FRONT_URL;
+        navigate(`${frontUrl}/events/create`);
     };
 
     const [state, setState] = useState({
@@ -173,12 +179,14 @@ function EventPage() {
             <PageHeader
                 className="flex items-center justify-between px-[30px] py-[25px] bg-transparent [&>div>div>.ant-page-header-heading-title]:text-[22px] [&>div>div>.ant-page-header-heading-title]:font-semibold [&>div>div>.ant-page-header-heading-title]:text-dark dark:[&>div>div>.ant-page-header-heading-title]:text-white leading-[32px] [&>div>div]:flex [&>div>div]:items-center gap-[12px] [&>div]:flex [&>div]:flex-wrap [&>div]:items-center [&>div]:w-full [&>div]:gap-[10px] [&>div>.ant-page-header-heading-left]:m-0 [&>div>.ant-page-header-heading-left]:gap-[12px]"
                 subTitle={
-                    <Link
-                        className="bg-primary hover:bg-hbr-primary border-solid border-1 border-primary text-white dark:text-white87 text-[14px] font-semibold leading-[22px] inline-flex items-center justify-center rounded-[4px] px-[20px] h-[44px] shadow-btn gap-[8px]"
-                        to={`/${authRole}/events/create`}
-                    >
-                        <UilPlus className="w-[15px] h-[15px]" /> <span>Add New</span>
-                    </Link>
+                    authRole === "organizer" && (
+                        <NavLink
+                            onClick={handleEventCreate}
+                            className="bg-primary hover:bg-hbr-primary border-solid border-1 border-primary text-white dark:text-white87 text-[14px] font-semibold leading-[22px] inline-flex items-center justify-center rounded-[4px] px-[20px] h-[44px] shadow-btn gap-[8px]"
+                        >
+                            <UilPlus className="w-[15px] h-[15px]" /> <span>Add New</span>
+                        </NavLink>
+                    )
                 }
                 buttons={[
                     <div key={1} className="relative">

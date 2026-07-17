@@ -60,7 +60,7 @@ function Dashboard() {
                             <OverviewCard
                                 data={{
                                     type: 'primary',
-                                    icon: 'shopping-cart.svg',
+                                    icon: 'ticket.svg',
                                     label: 'Total Events',
                                     total: dashboardData.events_count,
                                     status: 'growth',

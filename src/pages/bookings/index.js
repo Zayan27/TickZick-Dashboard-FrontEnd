@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Table, Spin, Modal, Tag, Descriptions, message, Select, Button as AntButton, Space, Image, Card, Statistic } from 'antd';
-import { Link, useSearchParams  } from 'react-router-dom';
+import { Link, useLocation, useSearchParams  } from 'react-router-dom';
 import { UilSearch, UilEye, UilFileDownload, UilEdit, UilTrash, UilCalendarAlt, UilUser, UilTicket, UilDollarSign, UilReceipt, UilCheckCircle, UilTimesCircle, UilClock } from '@iconscout/react-unicons';
 import { GlobalUtilityStyle, PaginationStyle } from '../../container/styled';
 import { PageHeader } from '../../components/page-headers/page-headers';
@@ -21,6 +21,7 @@ function BookingPage() {
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [statusLoading, setStatusLoading] = useState(false);
+    const location = useLocation();
 
     const user = getItem("auth_user");
     const authRole = getItem("auth_role");
@@ -50,8 +51,9 @@ function BookingPage() {
     };
 
     useEffect(() => {
+        debugger;
         loadData();
-    }, [authRole]);
+    }, [authRole, location]);
 
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this booking?")) return;
