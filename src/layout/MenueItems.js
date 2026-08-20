@@ -132,6 +132,13 @@ function MenuItems({ toggleCollapsed }) {
         'all-events',
         null,
       ),
+      getItem(
+        <NavLink onClick={toggleCollapsed} to={`${path}/cancel-requests`}>
+          {t('Cancel Requests')}
+        </NavLink>,
+        'cancel-requests',
+        null,
+      ),
     ]),
     getItem(t('Event Bookings'), 'event-bookings', !topMenu && <UilTicket />, [
       getItem(
@@ -174,6 +181,15 @@ function MenuItems({ toggleCollapsed }) {
       getItem(
         <NavLink onClick={toggleCollapsed} to={`${path}/support-tickets`}>
           {t('all tickets')}
+        </NavLink>,
+        'all-tickets',
+        null,
+      ),
+    ]),
+    getItem(t('Refund Tickets'), 'refund-list', !topMenu && <UilCommentAlt />, [
+      getItem(
+        <NavLink onClick={toggleCollapsed} to={`${path}/refund-list`}>
+          {t('all refunds')}
         </NavLink>,
         'all-tickets',
         null,

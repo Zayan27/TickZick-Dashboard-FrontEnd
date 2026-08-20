@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Table, Spin, Modal, Tag, Descriptions, message, Select, Button as AntButton, Space, Image, Card, Statistic } from 'antd';
+import { Row, Col, Table, Spin, Modal, Tag, Descriptions, message, Select, Input, Button as AntButton, Space, Image, Card, Statistic } from 'antd';
 import { Link, useLocation, useSearchParams  } from 'react-router-dom';
 import { UilSearch, UilEye, UilFileDownload, UilEdit, UilTrash, UilCalendarAlt, UilUser, UilTicket, UilDollarSign, UilReceipt, UilCheckCircle, UilTimesCircle, UilClock } from '@iconscout/react-unicons';
 import { GlobalUtilityStyle, PaginationStyle } from '../../container/styled';
@@ -11,7 +11,7 @@ import moment from 'moment';
 
 const { Option } = Select;
 
-function BookingPage() {
+function RefundsTicket() {
     const [searchParams, setSearchParams] = useSearchParams();
     const statusParams = searchParams.get('status');
 
@@ -21,10 +21,12 @@ function BookingPage() {
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
     const [statusLoading, setStatusLoading] = useState(false);
+    const [adminNote, setAdminNote] = useState("");
+    const [actionLoading, setActionLoading] = useState(false);
     const location = useLocation();
 
     const user = getItem("auth_user");
-    const authRole = getItem("auth_role");
+    const   authRole = getItem("auth_role");
 
     const loadData = async () => {
         setLoading(true);
@@ -36,8 +38,12 @@ function BookingPage() {
 
             // If user is organizer, you might want to use a different endpoint
             // Adjust based on your API structure
-            const res = await DataService.get(endpoint);
+            const res = await DataService.get("/admin/refund-requests");
 
+            const refunds = res.data.refund_requests || [];
+            setBookings(refunds);
+            setFiltered(refunds);
+            console.log("filtered data", filtered)
             if (res.data.status) {
                 const bookingsData = res.data.bookings || res.data.data || [];
                 setBookings(Array.isArray(bookingsData) ? bookingsData : []);
@@ -51,6 +57,7 @@ function BookingPage() {
     };
 
     useEffect(() => {
+        debugger;
         loadData();
     }, [authRole, location]);
 
@@ -72,7 +79,7 @@ function BookingPage() {
 
         const result = bookings.filter(booking => {
             const bookingId = booking.booking_id || '';
-            const customerName = `${booking.fname || ''} ${booking.lname || ''}`.toLowerCase();
+            const customerName = `${booking.customer?.name}`.toLowerCase();
             const email = booking.email || '';
             const eventTitle = booking.event_title || '';
             const ticketTitle = booking.ticket_title || '';
@@ -153,6 +160,35 @@ function BookingPage() {
         }
     };
 
+    const handleRefundAction = async (action) => {
+        if (!selectedBooking) return;
+
+        setActionLoading(true);
+
+        try {
+            const { data } = await DataService.post(
+                `/admin/refund-requests/${selectedBooking.id}/${action}`,
+                {
+                    admin_note: adminNote,
+                }
+            );
+
+            message.success(data.message);
+
+            setModalVisible(false);
+            setAdminNote("");
+
+            loadData();
+        } catch (err) {
+            message.error(
+                err?.response?.data?.message ||
+                `Failed to ${action} refund request`
+            );
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const getStatusIcon = (status) => {
         switch (status?.toLowerCase()) {
             case 'completed':
@@ -198,39 +234,39 @@ function BookingPage() {
                 key: index + 1,
                 bookingId: (
                     <span className="font-mono text-body dark:text-white60 text-[15px] font-medium">
-                        #{booking.booking_id}
+                        #{booking.booking?.booking_id}
                     </span>
                 ),
                 customer: (
                     <div>
                         <div className="font-medium text-dark dark:text-white87">
-                            {booking.fname} {booking.lname}
+                            {booking.customer?.name}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-white60">
-                            {booking.email}
+                            {booking.customer?.email}
                         </div>
                         <div className="text-xs text-gray-400 dark:text-white40">
-                            {booking.phone}
+                            {booking.customer?.phone}
                         </div>
                     </div>
                 ),
                 event: (
                     <div>
                         <div className="font-medium text-dark dark:text-white87">
-                            {booking.event_title || 'Event'}
+                            {booking.event?.title || 'Event'}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-white60">
+                        {/* <div className="text-sm text-gray-500 dark:text-white60">
                             {booking.ticket_title || 'Ticket'}
-                        </div>
+                        </div> */}
                     </div>
                 ),
                 amount: (
                     <div className="font-mono">
                         <div className="font-semibold text-dark dark:text-white87">
-                            {formatPrice(booking)}
+                            {booking.booking?.price}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-white60">
-                            Qty: {booking.quantity || 1}
+                            Qty: {booking.booking?.quantity || 1}
                         </div>
                     </div>
                 ),
@@ -246,11 +282,11 @@ function BookingPage() {
                 ),
                 status: (
                     <Tag
-                        color={getStatusColor(booking.paymentStatus)}
-                        icon={getStatusIcon(booking.paymentStatus)}
+                        color={getStatusColor(booking.status)}
+                        icon={getStatusIcon(booking.status)}
                         className="inline-flex items-center gap-1"
                     >
-                        {booking.status_label || booking.paymentStatus || 'Pending'}
+                        {booking.status_label}
                     </Tag>
                 ),
                 action: (
@@ -289,16 +325,31 @@ function BookingPage() {
             });
         });
     }
-
+    
     const columns = [
-        { title: 'Booking ID', dataIndex: 'bookingId', key: 'bookingId', width: '150px' },
+        { title: 'Booking ID', dataIndex: 'bookingId', key: 'bookingId' },
         { title: 'Customer', dataIndex: 'customer', key: 'customer' },
-        { title: 'Event/Ticket', dataIndex: 'event', key: 'event' },
-        { title: 'Amount', dataIndex: 'amount', key: 'amount', width: '120px' },
-        { title: 'Date', dataIndex: 'date', key: 'date', width: '130px' },
-        { title: 'Status', dataIndex: 'status', key: 'status', width: '140px' },
-        { title: 'Actions', dataIndex: 'action', key: 'action', width: '120px' },
+        { title: 'Event', dataIndex: 'event', key: 'event' },
+        { title: 'Amount', dataIndex: 'amount', key: 'amount' },
+        { title: 'Date', dataIndex: 'date', key: 'date' },
+        { title: 'Status', dataIndex: 'status', key: 'status' },
+        { title: 'Action', dataIndex: 'action', key: 'action' },
     ];
+
+    // const columns = [
+    //     { title: 'Customer', dataIndex: ['customer', 'name'], key: 'customer' },
+    //     { title: 'Email', dataIndex: ['customer', 'email'], key: 'email' },
+    //     { title: 'Phone', dataIndex: ['customer', 'phone'], key: 'phone' },
+    //     { title: 'Event', dataIndex: ['event', 'title'], key: 'event' },
+    //     { title: 'Event Date', dataIndex: ['event', 'start_date'], key: 'eventDate', width: '150px' },
+    //     { title: 'Amount', dataIndex: ['booking', 'price'], key: 'amount', width: '120px' },
+    //     { title: 'Qty', dataIndex: ['booking', 'quantity'], key: 'quantity', width: '80px' },
+    //     { title: 'Reason', dataIndex: 'reason_label', key: 'reason' },
+    //     { title: 'Status', dataIndex: 'status_label', key: 'status', width: '140px' },
+    //     { title: 'Submitted', dataIndex: 'created_at', key: 'submitted', width: '160px' },
+    //     { title: 'Action', dataIndex: 'action', key: 'action', width: '100px' },
+    // ];
+
 
     const onSelectChange = (selectedRowKey) => {
         setState({ ...state, selectedRowKeys: selectedRowKey });
@@ -328,7 +379,7 @@ function BookingPage() {
                 title={
                     <div className="flex items-center gap-2">
                         <UilEye className="w-5 h-5 text-primary" />
-                        <span>Booking Details - #{selectedBooking?.booking_id}</span>
+                        <span>Refund Request - #{selectedBooking?.booking?.booking_id}</span>
                     </div>
                 }
                 visible={modalVisible}
@@ -347,37 +398,46 @@ function BookingPage() {
                     <div className="p-4">
                         {/* Booking Status Update Section */}
                         <Card className="mb-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
+                            <div className="flex flex-col gap-4">
+
+                                <div className="flex items-center justify-between">
                                     <Tag
-                                        color={getStatusColor(selectedBooking.paymentStatus)}
-                                        icon={getStatusIcon(selectedBooking.paymentStatus)}
-                                        className="text-lg px-4 py-1"
+                                        color={getStatusColor(selectedBooking.status)}
+                                        className="text-base px-4 py-1"
                                     >
-                                        Current Status: {selectedBooking.status_label || selectedBooking.paymentStatus}
+                                        {selectedBooking.status_label}
                                     </Tag>
+
+                                    {selectedBooking.status === "pending" && (
+                                        <div className="flex gap-2">
+                                            <Button
+                                                danger
+                                                loading={actionLoading}
+                                                onClick={() => handleRefundAction("reject")}
+                                            >
+                                                Reject
+                                            </Button>
+
+                                            <Button
+                                                type="primary"
+                                                loading={actionLoading}
+                                                onClick={() => handleRefundAction("approve")}
+                                            >
+                                                Approve
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <div className="flex items-center gap-3">
-                                    <span className="text-gray-600 dark:text-white60">Update Status:</span>
-                                    <Select
-                                        value={selectedBooking.paymentStatus}
-                                        onChange={handleStatusChange}
-                                        loading={statusLoading}
-                                        className="w-40"
-                                    >
-                                        {statusOptions.map(status => (
-                                            <Option key={status.value} value={status.value}>
-                                                <Tag color={status.color}>
-                                                    {status.label}
-                                                </Tag>
-                                            </Option>
-                                        ))}
-                                    </Select>
-                                </div>
+                                <Input.TextArea
+                                    rows={4}
+                                    placeholder="Admin note (optional)"
+                                    value={adminNote}
+                                    onChange={(e) => setAdminNote(e.target.value)}
+                                    maxLength={2000}
+                                />
                             </div>
                         </Card>
-
                         {/* Booking Information */}
                         <Descriptions
                             title={
@@ -391,25 +451,25 @@ function BookingPage() {
                             className="mb-6"
                         >
                             <Descriptions.Item label="Booking ID">
-                                <span className="font-mono">#{selectedBooking.booking_id}</span>
+                                <span className="font-mono">#{selectedBooking.booking?.booking_id}</span>
                             </Descriptions.Item>
                             <Descriptions.Item label="Booking Date">
-                                {moment(selectedBooking.created_at).format('DD MMM YYYY hh:mm A')}
+                                {moment(selectedBooking.event?.start_date).format('DD MMM YYYY hh:mm A')}
                             </Descriptions.Item>
                             <Descriptions.Item label="Event">
-                                {selectedBooking.event_title || 'N/A'}
+                                {selectedBooking.event?.title}
                             </Descriptions.Item>
-                            <Descriptions.Item label="Ticket">
-                                {selectedBooking.ticket_title || 'N/A'}
+                            <Descriptions.Item label="Price">
+                                {`Rs ${selectedBooking.booking?.price}`}
                             </Descriptions.Item>
                             <Descriptions.Item label="Quantity">
-                                {selectedBooking.quantity || 1}
+                                {selectedBooking.booking?.quantity}
                             </Descriptions.Item>
-                            <Descriptions.Item label="Event Date">
+                            {/* <Descriptions.Item label="Event Date">
                                 {selectedBooking.event_date
                                     ? moment(selectedBooking.event_date).format('DD MMM YYYY')
                                     : 'N/A'}
-                            </Descriptions.Item>
+                            </Descriptions.Item> */}
                         </Descriptions>
 
                         {/* Customer Information */}
@@ -425,25 +485,55 @@ function BookingPage() {
                             className="mb-6"
                         >
                             <Descriptions.Item label="Name">
-                                {selectedBooking.fname} {selectedBooking.lname}
+                                {selectedBooking.customer?.name}
                             </Descriptions.Item>
                             <Descriptions.Item label="Email">
-                                {selectedBooking.email}
+                                {selectedBooking.customer?.email}
                             </Descriptions.Item>
                             <Descriptions.Item label="Phone">
-                                {selectedBooking.phone || 'N/A'}
+                                {selectedBooking.customer?.phone || "N/A"}
                             </Descriptions.Item>
-                            <Descriptions.Item label="Address">
+                            {/* <Descriptions.Item label="Address">
                                 {selectedBooking.address || 'N/A'}
                                 {selectedBooking.city && `, ${selectedBooking.city}`}
                                 {selectedBooking.state && `, ${selectedBooking.state}`}
                                 {selectedBooking.country && `, ${selectedBooking.country}`}
                                 {selectedBooking.zip_code && ` - ${selectedBooking.zip_code}`}
+                            </Descriptions.Item> */}
+                        </Descriptions>
+
+                        <Descriptions title="Refund Information" bordered column={2}>
+                            <Descriptions.Item label="Reason">
+                                {selectedBooking.reason_label}
+                            </Descriptions.Item>
+
+                            <Descriptions.Item label="Status">
+                                <Tag color={getStatusColor(selectedBooking.status)}>
+                                    {selectedBooking.status_label}
+                                </Tag>
+                            </Descriptions.Item>
+
+                            <Descriptions.Item label="Comments" span={2}>
+                                {selectedBooking.additional_comments || "N/A"}
+                            </Descriptions.Item>
+
+                            <Descriptions.Item label="Admin Note" span={2}>
+                                {selectedBooking.admin_note || "N/A"}
+                            </Descriptions.Item>
+
+                            <Descriptions.Item label="Submitted">
+                                {moment(selectedBooking.created_at).format("DD MMM YYYY hh:mm A")}
+                            </Descriptions.Item>
+
+                            <Descriptions.Item label="Reviewed">
+                                {selectedBooking.reviewed_at
+                                    ? moment(selectedBooking.reviewed_at).format("DD MMM YYYY hh:mm A")
+                                    : "Not Reviewed"}
                             </Descriptions.Item>
                         </Descriptions>
 
                         {/* Payment Information */}
-                        <Descriptions
+                        {/* <Descriptions
                             title={
                                 <div className="flex items-center gap-2">
                                     <UilDollarSign className="w-4 h-4" />
@@ -485,7 +575,7 @@ function BookingPage() {
                                     {selectedBooking.status_label || selectedBooking.paymentStatus}
                                 </Tag>
                             </Descriptions.Item>
-                        </Descriptions>
+                        </Descriptions> */}
 
                         {/* Invoice Section */}
                         {selectedBooking.invoice && (
@@ -535,7 +625,7 @@ function BookingPage() {
                     </div>,
                 ]}
                 ghost
-                title={statusParams ? `${statusParams.charAt(0).toUpperCase() + statusParams.slice(1)} Bookings` : 'Bookings Management'}
+                title='Refund Tickets'
             />
 
             <div className="min-h-[715px] lg:min-h-[580px] flex-1 h-auto px-8 xl:px-[15px] pb-[30px] bg-transparent">
@@ -597,4 +687,4 @@ function BookingPage() {
     );
 }
 
-export default BookingPage;
+export default RefundsTicket;

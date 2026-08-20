@@ -29,7 +29,6 @@ const AuthInfo = React.memo(() => {
   useEffect(() => {
     const authUser = getItem('auth_user');
     const authRole = getItem('auth_role');
-    debugger;
     setState(prev => ({
       ...prev,
       user: authUser,

@@ -10,13 +10,13 @@ import {
 } from 'antd';
 import { Link, NavLink, useNavigate} from 'react-router-dom';
 import { UilPlus, UilSearch, UilEdit, UilTrash, UilEye, UilTimesCircle } from '@iconscout/react-unicons';
-import { GlobalUtilityStyle, PaginationStyle } from '../../container/styled';
-import { PageHeader } from '../../components/page-headers/page-headers';
-import { DataService } from "../../config/dataService/dataService";
-import { getItem } from "../../utility/localStorageControl";
+import { GlobalUtilityStyle, PaginationStyle } from '../../../container/styled';
+import { PageHeader } from '../../../components/page-headers/page-headers';
+import { DataService } from "../../../config/dataService/dataService";
+import { getItem } from "../../../utility/localStorageControl";
 
 
-function EventPage() {
+function EventCancel() {
     const [events, setEvents] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const navigate = useNavigate();
@@ -31,16 +31,27 @@ function EventPage() {
 
     const loadData = async () => {
         setLoading(true);
+
         try {
-            const res = await DataService.get(`/${authRole}/events`);
-            if (res.data.status) {
-                setEvents(res.data.events || []);
-                setFiltered(res.data.events || []);
+            const res = await DataService.get(
+                `/${authRole}/event-cancellation-requests`
+            );
+
+            console.log("Cancellation API response:", res.data);
+
+            if (res.data?.success) {
+                const requests = res.data?.cancellation_requests || [];
+
+                console.log("Cancellation requests:", requests);
+
+                setEvents(requests);
+                setFiltered(requests);
             }
         } catch (error) {
             console.error("Fetch error:", error);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     useEffect(() => {
@@ -123,11 +134,12 @@ function EventPage() {
     const onHandleSearch = (e) => {
         const search = e.target.value.toLowerCase();
 
-        const result = events.filter(ev =>
-            (ev.title || "").toLowerCase().includes(search) ||
-            (ev.event_category || "").toLowerCase().includes(search) ||
-            (ev.city || "").toLowerCase().includes(search) ||
-            (ev.country || "").toLowerCase().includes(search)
+        const result = events.filter((request) =>
+            (request.event?.title || "").toLowerCase().includes(search) ||
+            (request.reason || "").toLowerCase().includes(search) ||
+            (request.status_label || "").toLowerCase().includes(search) ||
+            (request.organizer?.name || "").toLowerCase().includes(search) ||
+            (request.organizer?.email || "").toLowerCase().includes(search)
         );
 
         setFiltered(result);
@@ -145,143 +157,144 @@ function EventPage() {
     const dataSource = [];
 
     if (filtered.length)
-        filtered.map((event, index) => {
+        filtered.map((request, index) => {
+            const event = request.event || {};
+            const organizer = request.organizer || {};
+            const cancellation_id = request?.id || '';
             const {
                 id,
-                thumbnail,
                 title,
-                event_category,
                 start_date,
                 end_date,
-                address,
-                city,
-                country,
-                email,
-                phone_number,
-                display_status
+                status,
+                is_cancelled
             } = event;
 
+            const {
+                reason,
+                status_label,
+                created_at
+            } = request;
+
             return dataSource.push({
-                key: index + 1,
-                image: (
-                    <div className="flex items-center">
-                        <figure className="mx-2 mb-0">
-                            <img
-                                className="w-10 h-10 rounded object-cover"
-                                src={thumbnail ? thumbnail : require('../../static/img/avatar/profileImage.png')}
-                                alt={id}
-                            />
-                        </figure>
-                    </div>
-                ),
+                key: request.id,
+
                 title: (
                     <span className="text-body dark:text-white60 text-[15px] font-medium">
-                        {title}
+                        {title || "-"}
                     </span>
                 ),
-                category: (
+
+                organizer: (
                     <span className="text-body dark:text-white60 text-[15px] font-medium">
-                        {event_category}
-                    </span>
-                ),
-                address: (
-                    <span className="text-body dark:text-white60 text-[15px] font-medium">
-                        {address} <br />
-                        {city && country ? `${city}, ${country}` : ""}
-                    </span>
-                ),
-                contact: (
-                    <span className="text-body dark:text-white60 text-[15px] font-medium">
-                        {email}
+                        {organizer.name || "-"}
                         <br />
-                        {phone_number}
+                        <span className="text-xs text-gray-500">
+                            {organizer.email || ""}
+                        </span>
                     </span>
                 ),
+
+                reason: (
+                    <span className="text-body dark:text-white60 text-[15px] font-medium">
+                        {reason || "-"}
+                    </span>
+                ),
+
                 sdate: (
                     <span className="text-body dark:text-white60 text-[15px] font-medium">
-                        {start_date}
+                        {start_date || "-"}
                     </span>
                 ),
+
                 edate: (
                     <span className="text-body dark:text-white60 text-[15px] font-medium">
-                        {end_date}
+                        {end_date || "-"}
                     </span>
                 ),
+
                 status: (
                     <span
                         className={`inline-flex items-center justify-center min-h-[24px] px-3 text-xs font-medium rounded-[15px]
                             ${
-                                display_status === "active"
-                                    ? "bg-active-transparent text-active"
-                                    : display_status === "ended"
-                                    ? "bg-gray-transparent text-gray"
-                                    : display_status === "cancelled"
-                                    ? "bg-blocked-transparent text-blocked"
+                                request.status === "pending"
+                                    ? "bg-warning-transparent text-warning"
+                                    : request.status === "approved"
+                                    ? "bg-success-transparent text-success"
+                                    : request.status === "rejected"
+                                    ? "bg-danger-transparent text-danger"
                                     : "bg-gray-transparent text-gray"
                             }`}
                     >
-                        {display_status === "active" && "Active"}
-                        {display_status === "ended" && "Ended"}
-                        {display_status === "cancelled" && "Cancelled"}
+                        {status_label || request.status || "-"}
                     </span>
                 ),
+
+                created_at: (
+                    <span className="text-body dark:text-white60 text-[15px] font-medium">
+                        {created_at || "-"}
+                    </span>
+                ),
+
                 action: (
                     <div className="flex items-center gap-3 justify-center">
-                    {/* View */}
-                    <Link
-                        className="text-light-extra dark:text-white60"
-                        to={`/${authRole}/events/show/${id}`}
-                    >
-                        <UilEye className="w-4 h-4" />
-                    </Link>
 
-                    {/* Edit - Organizer only */}
-                    {authRole === "organizer" && (
+                        {/* View Event */}
                         <Link
                             className="text-light-extra dark:text-white60"
-                            to={`/${authRole}/events/edit/${id}`}
+                            to={`/${authRole}/cancel-requests/show/${cancellation_id}`}
+                            title="View Event"
                         >
-                            <UilEdit className="w-4 h-4" />
+                            <UilEye className="w-4 h-4" />
                         </Link>
-                    )}
 
-                    {/* Delete */}
-                    <button
-                        type="button"
-                        className="text-light-extra dark:text-white60"
-                        title="Delete Event"
-                        onClick={() => handleDelete(id)}
-                    >
-                        <UilTrash className="w-4 h-4" />
-                    </button>
-
-                     {/* Cancel */}
-                    {display_status !== "cancelled" && (
-                        <button
-                            type="button"
-                            className="text-danger hover:text-red-600"
-                            title="Cancel Event"
-                            onClick={() => handleCancel(event)}
-                        >
-                            <UilTimesCircle className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
+                    </div>
                 ),
             });
         });
 
 
     const columns = [
-        { title: 'Image', dataIndex: 'image', key: 'image' },
-        { title: 'Title', dataIndex: 'title', key: 'title' },
-        { title: 'Category', dataIndex: 'category', key: 'category' },
-        { title: 'Address', dataIndex: 'address', key: 'address' },
-        { title: 'Contact', dataIndex: 'contact', key: 'contact' },
-        { title: 'Start Date', dataIndex: 'sdate', key: 'sdate' },
-        { title: 'End Date', dataIndex: 'edate', key: 'edate' },
-        { title: 'Status', dataIndex: 'status', key: 'status' },
-        { title: 'Actions', dataIndex: 'action', key: 'action' },
+        {
+            title: "Event",
+            dataIndex: "title",
+            key: "title"
+        },
+        {
+            title: "Organizer",
+            dataIndex: "organizer",
+            key: "organizer"
+        },
+        {
+            title: "Reason",
+            dataIndex: "reason",
+            key: "reason"
+        },
+        {
+            title: "Start Date",
+            dataIndex: "sdate",
+            key: "sdate"
+        },
+        {
+            title: "End Date",
+            dataIndex: "edate",
+            key: "edate"
+        },
+        {
+            title: "Request Status",
+            dataIndex: "status",
+            key: "status"
+        },
+        {
+            title: "Requested At",
+            dataIndex: "created_at",
+            key: "created_at"
+        },
+        {
+            title: "Actions",
+            dataIndex: "action",
+            key: "action"
+        }
     ];
 
     const onSelectChange = (selectedRowKey) => {
@@ -441,4 +454,4 @@ function EventPage() {
     );
 }
 
-export default EventPage;
+export default EventCancel;

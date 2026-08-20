@@ -4,9 +4,11 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import Axios from './axios';
 import Dashboard from './dashboard';
 import Event from './event';
+import CancelEvent from './eventCancel'
 import EventTicket from './ticket';
 import Booking from './booking';
 import SupportTickets from './support-tickets';
+import RefundPage from './refund'
 import Profile from './profile';
 import Ecommerce from './ecommerce';
 import Features from './features';
@@ -15,6 +17,8 @@ import Pages from './pages';
 import Users from './users';
 import Widgets from './widgets';
 import withAdminLayout from '../../layout/withAdminLayout';
+import RefundsTicket from '../../pages/refunds';
+import EventCancel from '../../pages/events/ticket-cancel';
 
 const Charts = lazy(() => import('./charts'));
 const KnowledgeBase = lazy(() => import('../../container/pages/knowledgeBase/Index'));
@@ -65,10 +69,12 @@ const Admin = React.memo(() => {
       <Routes>
         <Route index path="/*" element={<Dashboard />} />
         <Route index path="/events/*" element={<Event />} />
+        <Route index path="/cancel-requests/*" element={<CancelEvent/>} />
         <Route index path="/tickets/*" element={<EventTicket />} />
         <Route index path="/profile/*" element={<Profile />} />
         <Route index path="/bookings/*" element={<Booking />} />
         <Route index path="/support-tickets/*" element={<SupportTickets />} />
+        <Route index path="/refund-list/*" element={<RefundPage />}/>
         <Route path="pages/*" element={<Pages />} />
         <Route path="gallery/*" element={<Gallery />} />
         <Route path="all-articles" element={<AllArticle />} />
