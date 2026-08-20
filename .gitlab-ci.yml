@@ -1,0 +1,15 @@
+stages:
+  - deploy
+
+deploy_dashboard:
+  stage: deploy
+  tags:
+    - tickzick
+  only:
+    - devops
+
+  script:
+    - cd /root/Tickzick/tickzick-dashboard
+    - git pull origin devops
+    - docker compose down --remove-orphans
+    - docker compose up --build -d
